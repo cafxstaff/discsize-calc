@@ -3,18 +3,14 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Disc Bitrate Calculator</title>
+    <title>オーサリングビットレート電卓</title>
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
     <main class="app-shell">
       <header class="app-header">
         <div>
-          <p class="eyebrow">Authoring bitrate tool</p>
-          <h1>Disc Bitrate Calculator</h1>
-        </div>
-        <div class="header-meter" aria-label="PCM優先">
-          <span>PCM first</span>
+          <h1>オーサリングビットレート電卓</h1>
         </div>
       </header>
 
@@ -29,15 +25,15 @@
             <div class="input-grid">
               <label class="time-field">
                 <span>時</span>
-                <input id="hours" type="number" min="0" max="99" inputmode="numeric" value="1">
+                <input id="hours" type="text" inputmode="numeric" value="01" maxlength="2">
               </label>
               <label class="time-field">
                 <span>分</span>
-                <input id="minutes" type="number" min="0" max="59" inputmode="numeric" value="30">
+                <input id="minutes" type="text" inputmode="numeric" value="30" maxlength="2">
               </label>
               <label class="time-field">
                 <span>秒</span>
-                <input id="seconds" type="number" min="0" max="59" inputmode="numeric" value="0">
+                <input id="seconds" type="text" inputmode="numeric" value="00" maxlength="2">
               </label>
             </div>
 
@@ -66,28 +62,13 @@
             </div>
           </section>
 
-          <section class="summary-band" aria-live="polite">
-            <div>
-              <span class="summary-label">入力尺</span>
-              <strong id="durationSummary">1時間30分00秒</strong>
-            </div>
-            <div>
-              <span class="summary-label">マージン</span>
-              <strong id="marginSummary">7%</strong>
-            </div>
-            <div>
-              <span class="summary-label">丸め</span>
-              <strong>100kbps切り下げ</strong>
-            </div>
-          </section>
-
           <section class="notes-band" aria-labelledby="notes-heading">
             <h2 id="notes-heading">計算メモ</h2>
             <ul>
               <li>DVD LPCMは16bit / 48kHz / 2chとして1,536kbpsで計算しています。</li>
-              <li>DVD AC-3代替案は448kbpsです。</li>
-              <li>BD-Rは25GBディスクの実用目安として23GBで計算しています。</li>
+              <li>DVD AC-3は448kbpsです。</li>
               <li>DVDの映像ビットレートは実用上8.0Mbpsを推奨上限として扱います。</li>
+              <li>映像ビットレートは100kbps単位で切り下げています。</li>
             </ul>
           </section>
         </aside>

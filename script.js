@@ -16,16 +16,16 @@ const MEDIA = [
   {
     id: "bdr",
     name: "BD-R",
-    detail: "25GB / 計算容量 23GB",
-    capacityGb: 23,
+    detail: "25GB",
+    capacityGb: 25,
     type: "bd"
   }
 ];
 
 const AUDIO = {
   dvdPcm: {
-    label: "PCM優先",
-    detail: "LPCM 16bit / 48kHz / 2ch",
+    label: "PCM",
+    detail: "LPCM 1,536kbps",
     kbps: 1536,
     badge: "PCM"
   },
@@ -36,14 +36,14 @@ const AUDIO = {
     badge: "容量節約"
   },
   pcm2: {
-    label: "PCM優先",
-    detail: "LPCM 16bit / 48kHz / 2ch",
+    label: "PCM",
+    detail: "LPCM 1,536kbps",
     kbps: 1536,
     badge: "PCM"
   },
   pcm51: {
     label: "PCM 5.1",
-    detail: "LPCM 16bit / 48kHz / 5.1ch",
+    detail: "LPCM 5.1ch 4,608kbps",
     kbps: 4608,
     badge: "PCM"
   },
@@ -65,18 +65,22 @@ const elements = {
   minutes: document.querySelector("#minutes"),
   seconds: document.querySelector("#seconds"),
   results: document.querySelector("#results"),
-  durationSummary: document.querySelector("#durationSummary"),
-  marginSummary: document.querySelector("#marginSummary"),
   marginButtons: [...document.querySelectorAll("[data-margin]")],
   bdAudioButtons: [...document.querySelectorAll("[data-bd-audio]")]
 };
 
 function clampNumber(value, min, max) {
-  const number = Number.parseInt(value, 10);
+  const number = Number.parseInt(String(value).replace(/\D/g, ""), 10);
   if (Number.isNaN(number)) {
     return min;
   }
   return Math.min(Math.max(number, min), max);
+}
+
+function normalizeTimeInput(input) {
+  const max = input === elements.hours ? 99 : 59;
+  const value = clampNumber(input.value, 0, max);
+  input.value = String(value).padStart(2, "0");
 }
 
 function getDurationSeconds() {
@@ -84,13 +88,6 @@ function getDurationSeconds() {
   const minutes = clampNumber(elements.minutes.value, 0, 59);
   const seconds = clampNumber(elements.seconds.value, 0, 59);
   return hours * 3600 + minutes * 60 + seconds;
-}
-
-function formatDuration(totalSeconds) {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  return `${hours}時間${String(minutes).padStart(2, "0")}分${String(seconds).padStart(2, "0")}秒`;
 }
 
 function formatMbps(kbps) {
@@ -137,8 +134,8 @@ function evaluatePlan(media, videoKbps) {
   }
 
   if (media.type === "dvd") {
-    if (videoKbps > 8000) {
-      return { label: "DVD推奨上限超え", tone: "caution" };
+    if (videoKbps >= 8000) {
+      return { label: "上限（8Mbps）以上", tone: "over" };
     }
     if (videoKbps >= 6000) {
       return { label: "高画質域", tone: "good" };
@@ -152,6 +149,9 @@ function evaluatePlan(media, videoKbps) {
     return { label: "かなり厳しい", tone: "danger" };
   }
 
+  if (videoKbps >= 35000) {
+    return { label: "上限（35Mbps）以上", tone: "over" };
+  }
   if (videoKbps >= 20000) {
     return { label: "BD高画質域", tone: "good" };
   }
@@ -168,22 +168,20 @@ function createPlan(media, audio, durationSeconds, isAlternative = false) {
   const videoKbps = calculateVideoKbps(media, audio, durationSeconds);
   const totalKbps = videoKbps + audio.kbps;
   const status = evaluatePlan(media, videoKbps);
-  const capNote = media.type === "dvd" && videoKbps > 8000
-    ? `<div class="status caution">推奨上限目安: 8.0 Mbps</div>`
-    : "";
 
   return `
     <article class="plan-row">
       <div class="plan-title">
         <div>
           <strong>${audio.label}</strong>
-          <p>${audio.detail}</p>
         </div>
-        <span class="badge ${isAlternative ? "alt" : ""}">${audio.badge}</span>
       </div>
       <div class="bitrate-hero">
         <span>映像ビットレート</span>
-        <strong>${formatMbps(videoKbps)}</strong>
+        <div class="bitrate-line">
+          <strong class="${status.tone === "good" ? "" : status.tone}">${formatMbps(videoKbps)}</strong>
+          <em>${status.label}</em>
+        </div>
       </div>
       <div class="metric-grid">
         <div class="metric">
@@ -195,16 +193,12 @@ function createPlan(media, audio, durationSeconds, isAlternative = false) {
           <strong>${formatMbps(totalKbps)}</strong>
         </div>
       </div>
-      <div class="status ${status.tone === "good" ? "" : status.tone}">${status.label}</div>
-      ${capNote}
     </article>
   `;
 }
 
 function render() {
   const durationSeconds = getDurationSeconds();
-  elements.durationSummary.textContent = formatDuration(durationSeconds);
-  elements.marginSummary.textContent = `${Math.round(state.margin * 100)}%`;
 
   elements.results.innerHTML = MEDIA.map((media) => {
     const plans = media.type === "dvd"
@@ -247,10 +241,12 @@ function setActiveButton(buttons, activeButton) {
 
 function bindEvents() {
   [elements.hours, elements.minutes, elements.seconds].forEach((input) => {
-    input.addEventListener("input", render);
+    input.addEventListener("input", () => {
+      input.value = input.value.replace(/\D/g, "").slice(0, 2);
+      render();
+    });
     input.addEventListener("blur", () => {
-      const max = input === elements.hours ? 99 : 59;
-      input.value = clampNumber(input.value, 0, max);
+      normalizeTimeInput(input);
       render();
     });
   });
