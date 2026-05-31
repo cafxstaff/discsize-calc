@@ -9,15 +9,15 @@ const MEDIA = [
   {
     id: "dvd9",
     name: "DVD 2層",
-    detail: "8.5GB",
-    capacityGb: 8.5,
+    detail: "8.5GB（8,026MB）",
+    capacityMib: 8026,
     type: "dvd"
   },
   {
     id: "bdr",
     name: "BD-R",
-    detail: "25GB",
-    capacityGb: 25,
+    detail: "25GB（21,984MB）",
+    capacityMib: 21984,
     type: "bd"
   }
 ];
@@ -102,7 +102,10 @@ function formatKbps(kbps) {
 }
 
 function usableBytes(media) {
-  return media.capacityGb * 1_000_000_000 * (1 - state.margin);
+  const capacityBytes = media.capacityMib
+    ? media.capacityMib * 1024 * 1024
+    : media.capacityGb * 1_000_000_000;
+  return capacityBytes * (1 - state.margin);
 }
 
 function formatCapacity(bytes) {
@@ -114,6 +117,9 @@ function formatUsableCapacity(media) {
   const bytes = usableBytes(media);
   if (media.type === "bd") {
     return `${(bytes / 1_000_000_000).toFixed(2)} GB`;
+  }
+  if (media.capacityMib) {
+    return `${Math.floor(bytes / 1024 / 1024).toLocaleString("ja-JP")} MB`;
   }
   return formatCapacity(bytes);
 }
